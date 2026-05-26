@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # ========= Sing Agent API 服务 =========
+  sing-agent:
+    build:
+      context: /data/script/voice/sing-agent
+      dockerfile: /data/script/voice/sing-agent/docker/Dockerfile
+    image: sing-agent:v1
+    container_name: sing_agent
+    ports:
+      - "8080:8080"
+    volumes:
+      # 共享存储
+      - /data/voice-temp/voices:/data/voice-temp/voices:ro
+      - /data/voice-temp/songs:/data/voice-temp/songs:ro
+      - /data/voice-temp/output:/data/voice-temp/output
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HF_ENDPOINT=https://hf-mirror.com
+      # SoulX-Singer 服务地址（容器内访问需用宿主机IP或host.docker.internal）
+      - SOULX_URL=http://host.docker.internal:7861
+      # ACE-Step 服务地址
+      - ACE_STEP_URL=http://host.docker.internal:8001
+      # VoiceDesign/TTS 服务地址
+      - TTS_URL=http://host.docker.internal:8020
+    working_dir: /app/src
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["python", "-m", "uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8080"]
+    restart: unless-stopped
+    networks:
+      - ai_net
+
+networks:
+  ai_net:
+    external: true

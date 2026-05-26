@@ -1,0 +1,8 @@
+*.pyc
+__pycache__/
+.claude/
+lyrics/
+output/
+voices/
+pregenerated/
+config/
