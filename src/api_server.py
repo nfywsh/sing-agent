@@ -359,16 +359,21 @@ def random_song():
     if not os.path.exists(songs_dir):
         raise HTTPException(status_code=404, detail="No songs available")
 
-    song_ids = [d for d in os.listdir(songs_dir) if os.path.isdir(os.path.join(songs_dir, d))]
-    if not song_ids:
+    # 收集所有音频文件（支持直接文件或子目录中的vocal.wav）
+    audio_files = []
+    for fname in os.listdir(songs_dir):
+        fpath = os.path.join(songs_dir, fname)
+        if os.path.isfile(fpath) and fname.endswith(('.wav', '.mp3')):
+            audio_files.append((fname.rsplit('.', 1)[0], fpath))
+        elif os.path.isdir(fpath):
+            vocal_path = os.path.join(fpath, "vocal.wav")
+            if os.path.exists(vocal_path):
+                audio_files.append((fname, vocal_path))
+
+    if not audio_files:
         raise HTTPException(status_code=404, detail="No songs available")
 
-    song_id = random.choice(song_ids)
-    song_path = os.path.join(songs_dir, song_id, "vocal.wav")
-
-    if not os.path.exists(song_path):
-        raise HTTPException(status_code=404, detail=f"Song {song_id} vocal.wav not found")
-
+    song_id, song_path = random.choice(audio_files)
     return RandomSongResponse(song_path=song_path, song_id=song_id)
 
 

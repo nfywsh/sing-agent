@@ -4,8 +4,8 @@ services:
   # ========= Sing Agent API 服务 =========
   sing-agent:
     build:
-      context: /data/script/voice/sing-agent
-      dockerfile: /data/script/voice/sing-agent/docker/Dockerfile
+      context: /data/script/sing-agent
+      dockerfile: /data/script/sing-agent/docker/Dockerfile
     image: sing-agent:v1
     container_name: sing_agent
     ports:
