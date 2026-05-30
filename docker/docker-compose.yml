@@ -13,7 +13,7 @@ services:
     volumes:
       # 共享存储
       - /data/voice-temp/voices:/data/voice-temp/voices:ro
-      - /data/voice-temp/songs:/data/voice-temp/songs:ro
+      - /data/voice-temp/songs:/data/voice-temp/songs
       - /data/voice-temp/output:/data/voice-temp/output
     environment:
       - PYTHONUNBUFFERED=1

@@ -203,19 +203,15 @@ class SingAgentOrchestrator:
             prompt_prepared = prepare_audio_for_soulx(prompt_audio)
             target_prepared = prepare_audio_for_soulx(target_vocal_path)
 
-            # 调用 SoulX-Singer
+            # 调用 SoulX-Singer (结果已复制到宿主机输出目录)
             logger.info("Converting timbre with SoulX-Singer...")
-            result = convert_vocal_timbre(
+            output_path = convert_vocal_timbre(
                 prompt_audio=prompt_prepared,
                 target_audio=target_prepared,
                 pitch_shift=pitch_shift,
                 n_step=n_step,
                 cfg=cfg
             )
-
-            # 复制到输出目录
-            output_path = os.path.join(self.output_dir, f"converted_{os.getpid()}.wav")
-            subprocess.run(["cp", result, output_path], check=True)
 
             self.state = PipelineState.COMPLETED
             logger.info(f"Timbre conversion complete: {output_path}")
@@ -387,6 +383,7 @@ class SingAgentOrchestrator:
         voice_path: Optional[str] = None,
         voice_instructions: str = "清澈甜美的女声",
         theme: Optional[str] = None,
+        lyrics: Optional[str] = None,
         style: str = "Pop, Happy",
         duration: int = 90,
         model_type: ModelType = None
@@ -394,7 +391,7 @@ class SingAgentOrchestrator:
         """完整业务流程
 
         1. 音色处理（用户传入 vs Qwen3-TTS-VoiceDesign）
-        2. 歌词生成（Qwen3.6-35B）
+        2. 歌词生成（用户提供 vs Qwen3.6-35B）
         3. 生成歌曲（DiffRhythm 或 ACE-Step）
         4. 人声分离
         5. SoulX-Singer 音色转换（如提供音色）
@@ -403,6 +400,7 @@ class SingAgentOrchestrator:
             voice_path: 用户提供的音色文件路径
             voice_instructions: 音色描述（当 voice_path 为 None 时使用）
             theme: 歌词主题
+            lyrics: 用户提供的歌词（如果为 None，则使用 LLM 生成）
             style: 风格提示词
             duration: 目标时长
             model_type: 生成模型类型（默认为 self.model_type）
@@ -419,7 +417,17 @@ class SingAgentOrchestrator:
             logger.info(f"Voice ready: {voice_result['host_path']}")
 
             # Step 2: 歌词生成
-            lyrics_result = self.generate_lyrics(theme=theme)
+            if lyrics:
+                # 用户提供了歌词，直接使用
+                lyrics_result = {
+                    "lyrics": lyrics,
+                    "file_path": None,
+                    "container_path": None
+                }
+                logger.info("Using provided lyrics")
+            else:
+                # 调用 LLM 生成歌词
+                lyrics_result = self.generate_lyrics(theme=theme)
             logger.info(f"Lyrics ready: {lyrics_result['file_path']}")
 
             # Step 3: 生成歌曲
